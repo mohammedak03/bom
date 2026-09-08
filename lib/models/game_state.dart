@@ -12,8 +12,12 @@ class GameState {
     this.answeredCount = 0,
     this.phase = GamePhase.setup,
     List<Question>? questionPool,
+    List<String>? selectedPackageIds,
   }) : playerNames = List<String>.from(playerNames),
        questionPool = List<Question>.unmodifiable(questionPool ?? questions),
+       selectedPackageIds = List<String>.unmodifiable(
+         selectedPackageIds ?? const [],
+       ),
        lossPoints = lossPoints != null
            ? List<int>.from(lossPoints)
            : List<int>.filled(playerNames.length, 0) {
@@ -28,6 +32,9 @@ class GameState {
 
   final List<String> playerNames;
   final List<Question> questionPool;
+
+  /// Catalog IDs are persisted instead of arbitrary question data.
+  final List<String> selectedPackageIds;
   int currentPlayerIndex;
   final List<int> lossPoints;
   int currentRound;

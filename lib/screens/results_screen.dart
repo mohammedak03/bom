@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/game_state.dart';
+import '../services/match_persistence.dart';
 import '../theme/game_theme.dart';
 import '../widgets/game_ui.dart';
 import 'setup_screen.dart';
@@ -12,6 +13,7 @@ class ResultsScreen extends StatelessWidget {
 
   void _restart(BuildContext context) {
     gameState.reset();
+    MatchPersistence().clear();
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute<void>(builder: (_) => const SetupScreen()),
       (route) => false,

@@ -58,6 +58,7 @@ class _PackagesScreenState extends State<PackagesScreen> {
             playerNames: widget.playerNames,
             phase: GamePhase.playing,
             questionPool: _selection.selectedQuestions,
+            selectedPackageIds: _selection.selectedIds.toList(),
           ),
         ),
       ),
