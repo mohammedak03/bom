@@ -1,5 +1,6 @@
 import '../data/questions.dart';
 import 'question.dart';
+import '../services/question_deck.dart';
 
 enum GamePhase { setup, playing, boom, results }
 
@@ -18,6 +19,12 @@ class GameState {
     List<bool>? skipUsed,
     List<Question>? questionPool,
     List<String>? selectedPackageIds,
+    List<String>? usedQuestionIds,
+    List<String>? topicOrder,
+    int topicPosition = 0,
+    List<List<int>>? difficultyCounts,
+    this.currentQuestionId,
+    List<String>? roundQuestionIds,
   }) : playerNames = List<String>.from(playerNames),
        questionPool = List<Question>.unmodifiable(questionPool ?? questions),
        selectedPackageIds = List<String>.unmodifiable(
@@ -28,7 +35,8 @@ class GameState {
            : List<int>.filled(playerNames.length, 0),
        skipUsed = skipUsed != null
            ? List<bool>.from(skipUsed)
-           : List<bool>.filled(playerNames.length, false) {
+           : List<bool>.filled(playerNames.length, false),
+       roundQuestionIds = List<String>.from(roundQuestionIds ?? const []) {
     if (this.questionPool.isEmpty) {
       throw ArgumentError.value(
         questionPool,
@@ -43,6 +51,15 @@ class GameState {
         this.skipUsed.length != playerNames.length) {
       throw ArgumentError('Invalid player state.');
     }
+    deck = QuestionDeck(
+      pool: this.questionPool,
+      playerCount: playerNames.length,
+      usedIds: usedQuestionIds ?? const [],
+      topicOrder: topicOrder ?? const [],
+      topicPosition: topicPosition,
+      difficultyCounts: difficultyCounts,
+      lastQuestionId: currentQuestionId,
+    );
   }
 
   final List<String> playerNames;
@@ -58,6 +75,26 @@ class GameState {
   final MatchMode matchMode;
   final int initialStarterIndex;
   final List<bool> skipUsed;
+  late final QuestionDeck deck;
+  String? currentQuestionId;
+  final List<String> roundQuestionIds;
+
+  Question nextQuestion() {
+    final question = deck.takeForPlayer(currentPlayerIndex);
+    currentQuestionId = question.stableId;
+    if (!roundQuestionIds.contains(question.stableId)) {
+      roundQuestionIds.add(question.stableId);
+    }
+    return question;
+  }
+
+  Question? questionById(String? id) {
+    if (id == null) return null;
+    for (final question in questionPool) {
+      if (question.stableId == id) return question;
+    }
+    return null;
+  }
 
   int? get totalRounds => switch (matchMode) {
     MatchMode.quick => playerNames.length,
@@ -97,6 +134,7 @@ class GameState {
     for (var index = 0; index < skipUsed.length; index++) {
       skipUsed[index] = false;
     }
+    roundQuestionIds.clear();
   }
 
   void recordLoss() {
@@ -113,6 +151,8 @@ class GameState {
     currentRound = 1;
     answeredCount = 0;
     phase = GamePhase.setup;
+    currentQuestionId = null;
+    roundQuestionIds.clear();
 
     for (var index = 0; index < lossPoints.length; index++) {
       lossPoints[index] = 0;

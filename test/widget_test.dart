@@ -28,9 +28,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('جاوب بصوت عالي'), findsOneWidget);
-    expect(find.text('اضغط ومرّر الموبايل'), findsOneWidget);
+    expect(find.text('جاوبت؟ مرّرها'), findsOneWidget);
     expect(
-      find.text('اللي تنفجر عنده بياخد خسارة. والأقل خسائر يفوز.'),
+      find.text('الجواب المقبول فقط يمرّر الدور ويغيّر السؤال.'),
       findsOneWidget,
     );
 

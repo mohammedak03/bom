@@ -62,7 +62,9 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _stopwatch = Stopwatch()..start();
-    _currentQuestion = _randomQuestion();
+    _currentQuestion =
+        widget.gameState.questionById(widget.gameState.currentQuestionId) ??
+        widget.gameState.nextQuestion();
     if (widget.enableAudio) {
       _audioService.startTicking();
     }
@@ -149,7 +151,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
 
     setState(() {
       widget.gameState.nextPlayer();
-      _currentQuestion = _randomQuestion(previousQuestion: _currentQuestion);
+      _currentQuestion = widget.gameState.nextQuestion();
     });
     unawaited(_persistence.save(widget.gameState));
   }
@@ -170,7 +172,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
     _lastActionAt = now;
     setState(() {
       widget.gameState.useSkip();
-      _currentQuestion = _randomQuestion(previousQuestion: _currentQuestion);
+      _currentQuestion = widget.gameState.nextQuestion();
     });
     unawaited(_persistence.save(widget.gameState));
   }
@@ -268,20 +270,6 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
         (route) => false,
       );
     }
-  }
-
-  Question _randomQuestion({Question? previousQuestion}) {
-    final questions = widget.gameState.questionPool;
-    if (questions.length == 1) {
-      return questions.first;
-    }
-
-    Question nextQuestion;
-    do {
-      nextQuestion = questions[_random.nextInt(questions.length)];
-    } while (nextQuestion == previousQuestion);
-
-    return nextQuestion;
   }
 
   String get _currentPlayerName {

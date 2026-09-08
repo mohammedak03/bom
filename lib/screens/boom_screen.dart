@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/game_state.dart';
+import '../models/question.dart';
 import '../services/match_persistence.dart';
 import '../theme/game_theme.dart';
 import '../widgets/bomb_widget.dart';
@@ -248,6 +249,10 @@ class _BoomScreenState extends State<BoomScreen>
                           ],
                         ),
                       ),
+                      if (widget.gameState.roundQuestionIds.isNotEmpty) ...[
+                        const SizedBox(height: 18),
+                        _RoundReview(gameState: widget.gameState),
+                      ],
                     ],
                   ),
                 ),
@@ -256,6 +261,52 @@ class _BoomScreenState extends State<BoomScreen>
           ),
         ),
       ),
+    );
+  }
+}
+
+class _RoundReview extends StatelessWidget {
+  const _RoundReview({required this.gameState});
+  final GameState gameState;
+
+  @override
+  Widget build(BuildContext context) {
+    final questions = gameState.roundQuestionIds
+        .map(gameState.questionById)
+        .whereType<Question>()
+        .toList(growable: false);
+    return ExpansionTile(
+      key: const ValueKey('round-review'),
+      title: const Text(
+        'راجعوا أجوبة الجولة',
+        style: TextStyle(fontWeight: FontWeight.w800),
+      ),
+      children: [
+        for (final question in questions)
+          ExpansionTile(
+            key: ValueKey('review-${question.stableId}'),
+            title: Text(question.text),
+            childrenPadding: const EdgeInsetsDirectional.fromSTEB(
+              16,
+              0,
+              16,
+              12,
+            ),
+            children: [
+              Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: Text('الإجابة المرجعية: ${question.referenceAnswer}'),
+              ),
+              if (question.acceptedAlternatives.isNotEmpty)
+                Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: Text(
+                    'تُقبل أيضًا: ${question.acceptedAlternatives.join('، ')}',
+                  ),
+                ),
+            ],
+          ),
+      ],
     );
   }
 }

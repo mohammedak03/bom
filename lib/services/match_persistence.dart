@@ -7,14 +7,14 @@ import '../models/game_state.dart';
 
 class MatchPersistence {
   static const _key = 'unfinished_match_v1';
-  static const _version = 2;
+  static const _version = 3;
 
   Future<void> save(GameState state) async {
     if (state.phase != GamePhase.playing && state.phase != GamePhase.boom) {
       await clear();
       return;
     }
-    final snapshot = <String, Object>{
+    final snapshot = <String, Object?>{
       'version': _version,
       'players': state.playerNames,
       'losses': state.lossPoints,
@@ -26,6 +26,12 @@ class MatchPersistence {
       'mode': state.matchMode.name,
       'starter': state.initialStarterIndex,
       'skips': state.skipUsed,
+      'used': state.deck.usedIds.toList(),
+      'topics': state.deck.topicOrder,
+      'topicPosition': state.deck.topicPosition,
+      'difficultyCounts': state.deck.difficultyCounts,
+      'currentQuestion': state.currentQuestionId,
+      'roundQuestions': state.roundQuestionIds,
     };
     final preferences = await SharedPreferences.getInstance();
     await preferences.setString(_key, jsonEncode(snapshot));
@@ -77,6 +83,15 @@ class MatchPersistence {
       final answered = _int(decoded['answered']);
       final starter = _int(decoded['starter']);
       final skips = _bools(decoded['skips']);
+      final used = _strings(decoded['used']);
+      final topics = _strings(decoded['topics']);
+      final topicPosition = _int(decoded['topicPosition']);
+      final currentQuestion = decoded['currentQuestion'];
+      if (currentQuestion != null && currentQuestion is! String) {
+        throw const FormatException('current question id');
+      }
+      final roundQuestions = _strings(decoded['roundQuestions']);
+      final difficultyCounts = _intLists(decoded['difficultyCounts']);
       if (player < 0 ||
           player >= players.length ||
           starter < 0 ||
@@ -85,6 +100,20 @@ class MatchPersistence {
           round < 1 ||
           answered < 0) {
         throw const FormatException('invalid counters');
+      }
+      final catalogIds = pool.map((question) => question.stableId).toSet();
+      final hasSchedulingHistory =
+          used.isNotEmpty || currentQuestion != null || roundQuestions.isNotEmpty;
+      if (used.toSet().length != used.length ||
+          !used.every(catalogIds.contains) ||
+          !roundQuestions.every(catalogIds.contains) ||
+          difficultyCounts.length != players.length ||
+          (hasSchedulingHistory &&
+              (topics.toSet().length != topics.length ||
+                  topicPosition < 0 ||
+                  topicPosition >= topics.length)) ||
+          (currentQuestion != null && !catalogIds.contains(currentQuestion))) {
+        throw const FormatException('invalid scheduling state');
       }
       return GameState(
         playerNames: players,
@@ -98,6 +127,12 @@ class MatchPersistence {
         skipUsed: skips,
         questionPool: pool,
         selectedPackageIds: ids,
+        usedQuestionIds: used,
+        topicOrder: hasSchedulingHistory ? topics : const [],
+        topicPosition: hasSchedulingHistory ? topicPosition : 0,
+        difficultyCounts: difficultyCounts,
+        currentQuestionId: currentQuestion,
+        roundQuestionIds: roundQuestions,
       );
     } catch (_) {
       await clear();
@@ -125,6 +160,10 @@ class MatchPersistence {
               return item;
             })
             .toList(growable: false)
+      : throw const FormatException('list required');
+
+  List<List<int>> _intLists(Object? value) => value is List
+      ? value.map((item) => _ints(item)).toList(growable: false)
       : throw const FormatException('list required');
 
   int _int(Object? value) =>

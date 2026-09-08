@@ -2,7 +2,7 @@ import '../models/question.dart';
 import '../models/question_package.dart';
 
 /// Topic catalog. Access is checked before its question bank enters a game.
-const questionPackages = <QuestionPackage>[
+final questionPackages = <QuestionPackage>[
   QuestionPackage(
     id: 'general',
     name: 'خلطة عامة',
