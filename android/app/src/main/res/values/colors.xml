@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="game_paper">#F6F1E7</color>
+    <color name="game_ink">#252720</color>
+    <color name="game_orange">#EF5B35</color>
+</resources>

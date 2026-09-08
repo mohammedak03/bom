@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- The complete silhouette fits in the central 66dp adaptive icon safe area. -->
+    <group android:scaleX="0.28" android:scaleY="0.28"
+        android:translateX="26" android:translateY="26">
+        <path android:fillColor="@color/game_ink"
+            android:pathData="M100,58 C139,56 164,83 166,121 C169,157 143,183 104,182 C62,183 33,158 33,124 C31,87 60,61 100,58 Z" />
+        <path android:fillColor="@color/game_ink"
+            android:pathData="M75,170 L64,187 Q62,191 68,192 L82,177 Z M118,173 L130,189 Q134,193 138,187 L126,171 Z" />
+        <group android:pivotX="111" android:pivotY="61" android:rotation="16">
+            <path android:fillColor="@color/game_ink"
+                android:pathData="M101,48 L121,48 Q126,48 126,53 L126,65 Q126,70 121,70 L101,70 Q96,70 96,65 L96,53 Q96,48 101,48 Z" />
+            <path android:fillColor="@android:color/transparent"
+                android:strokeColor="@color/game_paper" android:strokeWidth="2"
+                android:strokeLineCap="round" android:pathData="M102,55 L119,55" />
+        </group>
+        <path android:fillColor="@android:color/transparent"
+            android:strokeColor="@color/game_ink" android:strokeWidth="4"
+            android:strokeLineCap="round"
+            android:pathData="M114,47 C116,27 129,21 139,29 C147,36 153,32 157,22" />
+        <path android:fillColor="@android:color/transparent"
+            android:strokeColor="@color/game_paper" android:strokeWidth="3.3"
+            android:strokeLineCap="round"
+            android:pathData="M164,17 L171,14 M162,23 L166,29 M157,24 L153,30 M153,20 L146,22 M156,14 L151,8 M162,14 L165,7" />
+        <path android:fillColor="@color/game_paper"
+            android:pathData="M79,97 C65,96 65,124 79,125 C93,126 93,98 79,97 Z M113,93 C98,93 98,123 113,123 C128,123 128,93 113,93 Z" />
+        <path android:fillColor="@color/game_ink"
+            android:pathData="M82,110 C77,110 77,120 82,120 C87,120 87,110 82,110 Z M116,107 C111,107 111,117 116,117 C121,117 121,107 116,107 Z" />
+        <path android:fillColor="@android:color/transparent"
+            android:strokeColor="@color/game_paper" android:strokeWidth="3.5"
+            android:strokeLineCap="round"
+            android:pathData="M87,139 Q97,150 109,137" />
+        <path android:fillColor="@android:color/transparent"
+            android:strokeColor="@color/game_orange" android:strokeWidth="4"
+            android:strokeLineCap="round" android:pathData="M125,127 L131,125" />
+    </group>
+</vector>
