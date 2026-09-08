@@ -1,5 +1,7 @@
-import 'package:flutter/material.dart';
 import 'dart:math';
+import 'dart:async';
+
+import 'package:flutter/material.dart';
 
 import '../data/question_packages.dart';
 import '../models/game_state.dart';
@@ -43,6 +45,9 @@ class _PackagesScreenState extends State<PackagesScreen> {
           packages: questionPackages,
           ads: widget.ads ?? AdMobRewardedAdService(),
         );
+    if (_ownsSelection) {
+      unawaited(_selection.loadPersistentUnlocks());
+    }
   }
 
   @override
@@ -108,7 +113,7 @@ class _PackagesScreenState extends State<PackagesScreen> {
           ),
           const SizedBox(height: 24),
           const Text(
-            'إعلان واحد يفتح هالباكيج لهاللعبة، بكل جولاتها.',
+            'إعلان واحد يفتح هالباكيج لمدة 24 ساعة.',
             style: TextStyle(fontSize: 17, height: 1.5),
           ),
           const SizedBox(height: 18),
@@ -120,7 +125,7 @@ class _PackagesScreenState extends State<PackagesScreen> {
           ),
           const SizedBox(height: 10),
           const Text(
-            'الإعلان في هالنسخة تجريبي.',
+            'بعدها بتقدروا تختاروها بأي لمّة خلال اليوم.',
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 12, color: GamePalette.muted),
           ),
@@ -180,7 +185,7 @@ class _PackagesScreenState extends State<PackagesScreen> {
           const _SubscriptionBenefit(label: 'اختاروا واخلطوا بدون إعلانات فتح'),
           const SizedBox(height: 24),
           const Text(
-            'الاشتراك لسه مش متاح. حاليًا افتح الباكيجات بإعلان.',
+            'الاشتراك لسه مش متاح. حاليًا افتح الباكيجات لإلها 24 ساعة بإعلان.',
             style: TextStyle(
               fontSize: 16,
               color: GamePalette.muted,

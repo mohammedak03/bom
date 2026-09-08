@@ -5,6 +5,7 @@ import 'package:bomb_questions/models/game_state.dart';
 import 'package:bomb_questions/models/package_selection.dart';
 import 'package:bomb_questions/services/rewarded_ad_service.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class FakeRewardedAds implements RewardedAdGateway {
   final response = Completer<RewardOutcome>();
@@ -55,6 +56,27 @@ void main() {
     expect(selection.selectedQuestionCount, 0);
     selection.dispose();
   });
+
+  test(
+    'earned access survives a new selection for the next 24 hours',
+    () async {
+      SharedPreferences.setMockInitialValues({});
+      final firstAds = FakeRewardedAds();
+      final first = PackageSelection(packages: questionPackages, ads: firstAds);
+      final pending = first.unlockWithAd('football');
+      firstAds.response.complete(RewardOutcome.earned);
+      await pending;
+      first.dispose();
+
+      final second = PackageSelection(
+        packages: questionPackages,
+        ads: FakeRewardedAds(),
+      );
+      await second.loadPersistentUnlocks();
+      expect(second.unlockedIds, {'football'});
+      second.dispose();
+    },
+  );
 
   test('locked and unknown package IDs cannot be selected', () {
     selection.toggle('football');

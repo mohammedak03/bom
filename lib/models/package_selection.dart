@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../services/rewarded_ad_service.dart';
+import '../services/package_unlock_store.dart';
 import 'question.dart';
 import 'question_package.dart';
 
@@ -10,8 +11,10 @@ class PackageSelection extends ChangeNotifier {
   PackageSelection({
     required List<QuestionPackage> packages,
     required RewardedAdGateway ads,
+    PackageUnlockStore? unlockStore,
   }) : packages = List.unmodifiable(packages),
-       _ads = ads {
+       _ads = ads,
+       _unlockStore = unlockStore ?? PackageUnlockStore() {
     final freePackages = this.packages.where(
       (package) => package.isFree && package.questions.isNotEmpty,
     );
@@ -20,6 +23,7 @@ class PackageSelection extends ChangeNotifier {
 
   final List<QuestionPackage> packages;
   final RewardedAdGateway _ads;
+  final PackageUnlockStore _unlockStore;
   final Set<String> _selectedIds = {};
   final Set<String> _unlockedIds = {};
   bool _isBusy = false;
@@ -30,6 +34,15 @@ class PackageSelection extends ChangeNotifier {
   bool get isBusy => _isBusy;
   int get selectedQuestionCount => selectedQuestions.length;
   bool get canStart => !_isBusy && selectedQuestions.isNotEmpty;
+
+  Future<void> loadPersistentUnlocks() async {
+    if (_disposed) return;
+    final ids = await _unlockStore.activeIds();
+    if (_disposed) return;
+    final known = packages.map((package) => package.id).toSet();
+    _unlockedIds.addAll(ids.where(known.contains));
+    notifyListeners();
+  }
 
   bool isAccessible(QuestionPackage package) =>
       package.isFree || _unlockedIds.contains(package.id);
@@ -78,6 +91,7 @@ class PackageSelection extends ChangeNotifier {
       if (result == RewardOutcome.earned) {
         _unlockedIds.add(id);
         _selectedIds.add(id);
+        await _unlockStore.grant(id);
       }
       return result;
     } catch (_) {

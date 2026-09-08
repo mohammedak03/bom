@@ -15,34 +15,32 @@ void main() {
     GoogleFonts.config.allowRuntimeFetching = false;
   });
 
-  testWidgets('free topics can be mixed and an empty selection disables start', (
-    tester,
-  ) async {
-    final fixture = await _pumpPackages(tester);
+  testWidgets(
+    'free topics can be mixed and an empty selection disables start',
+    (tester) async {
+      final fixture = await _pumpPackages(tester);
 
-    expect(fixture.selection.selectedIds, {'general'});
-    expect(_startButton(tester).onPressed, isNotNull);
-    await _tapCard(tester, 'countries');
+      expect(fixture.selection.selectedIds, {'general'});
+      expect(_startButton(tester).onPressed, isNotNull);
+      await _tapCard(tester, 'countries');
 
-    expect(fixture.selection.selectedIds, {'general', 'countries'});
-    final combinedCount = questionPackages
-        .where((package) => package.isFree)
-        .fold(0, (count, package) => count + package.questions.length);
-    expect(
-      find.text('2 باكيج مختار · $combinedCount سؤال'),
-      findsOneWidget,
-    );
-    expect(_cardSemantics(tester, 'countries').properties.selected, isTrue);
+      expect(fixture.selection.selectedIds, {'general', 'countries'});
+      final combinedCount = questionPackages
+          .where((package) => package.isFree)
+          .fold(0, (count, package) => count + package.questions.length);
+      expect(find.text('2 باكيج مختار · $combinedCount سؤال'), findsOneWidget);
+      expect(_cardSemantics(tester, 'countries').properties.selected, isTrue);
 
-    await _tapCard(tester, 'general');
-    await _tapCard(tester, 'countries');
+      await _tapCard(tester, 'general');
+      await _tapCard(tester, 'countries');
 
-    expect(fixture.selection.selectedIds, isEmpty);
-    expect(find.text('اختاروا باكيج واحد على الأقل'), findsOneWidget);
-    expect(_startButton(tester).onPressed, isNull);
-    expect(_cardSemantics(tester, 'countries').properties.selected, isFalse);
-    expect(fixture.ads.showCalls, 0);
-  });
+      expect(fixture.selection.selectedIds, isEmpty);
+      expect(find.text('اختاروا باكيج واحد على الأقل'), findsOneWidget);
+      expect(_startButton(tester).onPressed, isNull);
+      expect(_cardSemantics(tester, 'countries').properties.selected, isFalse);
+      expect(fixture.ads.showCalls, 0);
+    },
+  );
 
   testWidgets('opening or dismissing a locked topic never starts an ad', (
     tester,
@@ -51,11 +49,11 @@ void main() {
     await _tapCard(tester, 'football');
 
     expect(find.byKey(const ValueKey('watch-ad-football')), findsOneWidget);
+    expect(find.text('إعلان واحد يفتح هالباكيج لمدة 24 ساعة.'), findsOneWidget);
     expect(
-      find.text('إعلان واحد يفتح هالباكيج لهاللعبة، بكل جولاتها.'),
+      find.text('بعدها بتقدروا تختاروها بأي لمّة خلال اليوم.'),
       findsOneWidget,
     );
-    expect(find.text('الإعلان في هالنسخة تجريبي.'), findsOneWidget);
     expect(fixture.ads.showCalls, 0);
     expect(fixture.selection.unlockedIds, isEmpty);
 
@@ -138,72 +136,82 @@ void main() {
     });
   }
 
-  testWidgets('subscription preview states unavailability and grants no access', (
-    tester,
-  ) async {
-    final fixture = await _pumpPackages(tester);
-    final preview = find.byKey(const ValueKey('subscription-preview'));
-    await tester.ensureVisible(preview);
-    await tester.tap(preview);
-    await tester.pumpAndSettle();
+  testWidgets(
+    'subscription preview states unavailability and grants no access',
+    (tester) async {
+      final fixture = await _pumpPackages(tester);
+      final preview = find.byKey(const ValueKey('subscription-preview'));
+      await tester.ensureVisible(preview);
+      await tester.tap(preview);
+      await tester.pumpAndSettle();
 
-    expect(find.text('اشتراك اللمّة'), findsOneWidget);
-    expect(
-      find.text('الاشتراك لسه مش متاح. حاليًا افتح الباكيجات بإعلان.'),
-      findsOneWidget,
-    );
-    expect(fixture.selection.unlockedIds, isEmpty);
-    expect(fixture.ads.showCalls, 0);
-    final sheetButtons = tester.widgetList<GameButton>(
-      find.descendant(
-        of: find.byType(BottomSheet),
-        matching: find.byType(GameButton),
-      ),
-    );
-    expect(sheetButtons.map((button) => button.label), ['رجعني للمواضيع']);
+      expect(find.text('اشتراك اللمّة'), findsOneWidget);
+      expect(
+        find.text(
+          'الاشتراك لسه مش متاح. حاليًا افتح الباكيجات لإلها 24 ساعة بإعلان.',
+        ),
+        findsOneWidget,
+      );
+      expect(fixture.selection.unlockedIds, isEmpty);
+      expect(fixture.ads.showCalls, 0);
+      final sheetButtons = tester.widgetList<GameButton>(
+        find.descendant(
+          of: find.byType(BottomSheet),
+          matching: find.byType(GameButton),
+        ),
+      );
+      expect(sheetButtons.map((button) => button.label), ['رجعني للمواضيع']);
 
-    final close = find.text('رجعني للمواضيع');
-    await tester.ensureVisible(close);
-    await tester.tap(close);
-    await tester.pumpAndSettle();
+      final close = find.text('رجعني للمواضيع');
+      await tester.ensureVisible(close);
+      await tester.tap(close);
+      await tester.pumpAndSettle();
 
-    expect(find.text('اشتراك اللمّة'), findsNothing);
-    expect(fixture.selection.selectedIds, {'general'});
-    expect(fixture.selection.unlockedIds, isEmpty);
-  });
+      expect(find.text('اشتراك اللمّة'), findsNothing);
+      expect(fixture.selection.selectedIds, {'general'});
+      expect(fixture.selection.unlockedIds, isEmpty);
+    },
+  );
 
-  testWidgets('external selection and rewards survive going back and reopening', (
-    tester,
-  ) async {
-    final fixture = await _pumpPackages(tester, withBackRoute: true);
-    await _tapCard(tester, 'countries');
-    await _beginAd(tester, 'football');
-    fixture.ads.complete(RewardOutcome.earned);
-    await tester.pumpAndSettle();
+  testWidgets(
+    'external selection and rewards survive going back and reopening',
+    (tester) async {
+      final fixture = await _pumpPackages(tester, withBackRoute: true);
+      await _tapCard(tester, 'countries');
+      await _beginAd(tester, 'football');
+      fixture.ads.complete(RewardOutcome.earned);
+      await tester.pumpAndSettle();
 
-    final back = find.byKey(const ValueKey('packages-back'));
-    await tester.ensureVisible(back);
-    await tester.tap(back);
-    await tester.pumpAndSettle();
+      final back = find.byKey(const ValueKey('packages-back'));
+      await tester.ensureVisible(back);
+      await tester.tap(back);
+      await tester.pumpAndSettle();
 
-    expect(find.byType(PackagesScreen), findsNothing);
-    expect(fixture.ads.disposeCalls, 0);
-    expect(fixture.selection.unlockedIds, {'football'});
-    await tester.tap(find.byKey(const ValueKey('open-packages')));
-    await tester.pumpAndSettle();
+      expect(find.byType(PackagesScreen), findsNothing);
+      expect(fixture.ads.disposeCalls, 0);
+      expect(fixture.selection.unlockedIds, {'football'});
+      await tester.tap(find.byKey(const ValueKey('open-packages')));
+      await tester.pumpAndSettle();
 
-    expect(fixture.selection.selectedIds, {'general', 'countries', 'football'});
-    expect(_cardSemantics(tester, 'countries').properties.selected, isTrue);
-    await tester.ensureVisible(find.byKey(const ValueKey('package-football')));
-    expect(_cardSemantics(tester, 'football').properties.selected, isTrue);
-    expect(fixture.ads.showCalls, 1);
-    expect(fixture.ads.disposeCalls, 0);
+      expect(fixture.selection.selectedIds, {
+        'general',
+        'countries',
+        'football',
+      });
+      expect(_cardSemantics(tester, 'countries').properties.selected, isTrue);
+      await tester.ensureVisible(
+        find.byKey(const ValueKey('package-football')),
+      );
+      expect(_cardSemantics(tester, 'football').properties.selected, isTrue);
+      expect(fixture.ads.showCalls, 1);
+      expect(fixture.ads.disposeCalls, 0);
 
-    await _tapCard(tester, 'football');
-    expect(fixture.selection.selectedIds, {'general', 'countries'});
-    expect(fixture.selection.unlockedIds, {'football'});
-    expect(fixture.ads.showCalls, 1);
-  });
+      await _tapCard(tester, 'football');
+      expect(fixture.selection.selectedIds, {'general', 'countries'});
+      expect(fixture.selection.unlockedIds, {'football'});
+      expect(fixture.ads.showCalls, 1);
+    },
+  );
 }
 
 Future<_Fixture> _pumpPackages(
@@ -221,10 +229,8 @@ Future<_Fixture> _pumpPackages(
     selection.dispose();
   });
 
-  Widget packagesScreen() => PackagesScreen(
-    playerNames: const ['محمد', 'سارة'],
-    selection: selection,
-  );
+  Widget packagesScreen() =>
+      PackagesScreen(playerNames: const ['محمد', 'سارة'], selection: selection);
 
   await tester.pumpWidget(
     MaterialApp(
@@ -236,9 +242,7 @@ Future<_Fixture> _pumpPackages(
                   child: TextButton(
                     key: const ValueKey('open-packages'),
                     onPressed: () => Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => packagesScreen(),
-                      ),
+                      MaterialPageRoute<void>(builder: (_) => packagesScreen()),
                     ),
                     child: const Text('المواضيع'),
                   ),
