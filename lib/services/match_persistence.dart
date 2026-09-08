@@ -7,7 +7,7 @@ import '../models/game_state.dart';
 
 class MatchPersistence {
   static const _key = 'unfinished_match_v1';
-  static const _version = 1;
+  static const _version = 2;
 
   Future<void> save(GameState state) async {
     if (state.phase != GamePhase.playing && state.phase != GamePhase.boom) {
@@ -23,6 +23,9 @@ class MatchPersistence {
       'answered': state.answeredCount,
       'phase': state.phase.name,
       'packages': state.selectedPackageIds,
+      'mode': state.matchMode.name,
+      'starter': state.initialStarterIndex,
+      'skips': state.skipUsed,
     };
     final preferences = await SharedPreferences.getInstance();
     await preferences.setString(_key, jsonEncode(snapshot));
@@ -51,6 +54,12 @@ class MatchPersistence {
         'boom' => GamePhase.boom,
         _ => throw const FormatException('unfinished phase required'),
       };
+      final mode = switch (decoded['mode']) {
+        'quick' => MatchMode.quick,
+        'normal' => MatchMode.normal,
+        'open' => MatchMode.open,
+        _ => throw const FormatException('match mode required'),
+      };
       if (players.length < 2 ||
           players.length != losses.length ||
           ids.isEmpty) {
@@ -66,7 +75,15 @@ class MatchPersistence {
       final player = _int(decoded['player']);
       final round = _int(decoded['round']);
       final answered = _int(decoded['answered']);
-      if (player < 0 || player >= players.length || round < 1 || answered < 0) {
+      final starter = _int(decoded['starter']);
+      final skips = _bools(decoded['skips']);
+      if (player < 0 ||
+          player >= players.length ||
+          starter < 0 ||
+          starter >= players.length ||
+          skips.length != players.length ||
+          round < 1 ||
+          answered < 0) {
         throw const FormatException('invalid counters');
       }
       return GameState(
@@ -76,6 +93,9 @@ class MatchPersistence {
         currentRound: round,
         answeredCount: answered,
         phase: phase,
+        matchMode: mode,
+        initialStarterIndex: starter,
+        skipUsed: skips,
         questionPool: pool,
         selectedPackageIds: ids,
       );
@@ -96,6 +116,15 @@ class MatchPersistence {
 
   List<int> _ints(Object? value) => value is List
       ? value.map(_int).toList(growable: false)
+      : throw const FormatException('list required');
+
+  List<bool> _bools(Object? value) => value is List
+      ? value
+            .map((item) {
+              if (item is! bool) throw const FormatException('bool list');
+              return item;
+            })
+            .toList(growable: false)
       : throw const FormatException('list required');
 
   int _int(Object? value) =>

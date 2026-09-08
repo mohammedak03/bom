@@ -51,7 +51,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
   bool _roundEnded = false;
   bool _navigationStarted = false;
   bool _tickingSpedUp = false;
-  Duration? _lastAcceptedAnswerAt;
+  Duration? _lastActionAt;
   bool _paused = false;
   bool _countingDown = false;
   int _countdown = 3;
@@ -135,12 +135,12 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
       return;
     }
     if (_roundEnded ||
-        (_lastAcceptedAnswerAt != null &&
-            now - _lastAcceptedAnswerAt! < const Duration(milliseconds: 400))) {
+        (_lastActionAt != null &&
+            now - _lastActionAt! < const Duration(milliseconds: 400))) {
       return;
     }
 
-    _lastAcceptedAnswerAt = now;
+    _lastActionAt = now;
 
     if (widget.enableAudio) {
       unawaited(_audioService.playSuccess());
@@ -149,6 +149,27 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
 
     setState(() {
       widget.gameState.nextPlayer();
+      _currentQuestion = _randomQuestion(previousQuestion: _currentQuestion);
+    });
+    unawaited(_persistence.save(widget.gameState));
+  }
+
+  void _skipQuestion() {
+    if (_paused || _countingDown) return;
+    final now = _elapsed;
+    if (now >= _timerDuration) {
+      _endRound();
+      return;
+    }
+    if (_roundEnded ||
+        !widget.gameState.canSkipCurrentPlayer() ||
+        (_lastActionAt != null &&
+            now - _lastActionAt! < const Duration(milliseconds: 400))) {
+      return;
+    }
+    _lastActionAt = now;
+    setState(() {
+      widget.gameState.useSkip();
       _currentQuestion = _randomQuestion(previousQuestion: _currentQuestion);
     });
     unawaited(_persistence.save(widget.gameState));
@@ -309,6 +330,18 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                   onPressed: _answerQuestion,
                   icon: Icons.west_rounded,
                 ),
+                const SizedBox(height: 10),
+                GameButton(
+                  key: const ValueKey('skip-question'),
+                  label: widget.gameState.canSkipCurrentPlayer()
+                      ? 'تخطّي السؤال (متاح)'
+                      : 'تخطّي السؤال (استخدمته)',
+                  onPressed: widget.gameState.canSkipCurrentPlayer()
+                      ? _skipQuestion
+                      : null,
+                  icon: Icons.skip_next_rounded,
+                  secondary: true,
+                ),
                 const SizedBox(height: 12),
                 Text(
                   'بعدك: $nextPlayer',
@@ -338,6 +371,17 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                       GameEyebrow(
                         label: 'قنبلة الأسئلة',
                         trailing: 'سؤال ${widget.gameState.answeredCount + 1}',
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        widget.gameState.totalRounds == null
+                            ? 'الجولة ${widget.gameState.currentRound}'
+                            : 'الجولة ${widget.gameState.currentRound} من ${widget.gameState.totalRounds}',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: GamePalette.muted,
+                        ),
                       ),
                       SizedBox(
                         height: shortScreen

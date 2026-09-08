@@ -91,6 +91,12 @@ class ResultsScreen extends StatelessWidget {
                 style: textTheme.bodyMedium?.copyWith(color: GamePalette.muted),
               ),
               const SizedBox(height: 32),
+              Text(
+                '${_modeLabel(gameState.matchMode)} · ${gameState.totalRounds == null ? 'انتهت بعد الجولة ${gameState.currentRound}' : 'أُكملت ${gameState.currentRound} من ${gameState.totalRounds} جولات'}',
+                textAlign: TextAlign.center,
+                style: textTheme.bodySmall?.copyWith(color: GamePalette.muted),
+              ),
+              const SizedBox(height: 16),
               Padding(
                 padding: const EdgeInsets.only(bottom: 12),
                 child: Row(
@@ -155,6 +161,12 @@ class ResultsScreen extends StatelessWidget {
     });
     return rows;
   }
+
+  String _modeLabel(MatchMode mode) => switch (mode) {
+    MatchMode.quick => 'سريعة',
+    MatchMode.normal => 'عادية',
+    MatchMode.open => 'مفتوحة',
+  };
 }
 
 class _LeaderboardTile extends StatelessWidget {

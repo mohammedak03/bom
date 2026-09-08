@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../data/question_packages.dart';
 import '../models/package_selection.dart';
+import '../models/game_state.dart';
 import '../services/rewarded_ad_service.dart';
 import '../theme/game_theme.dart';
 import '../widgets/bomb_widget.dart';
@@ -16,6 +17,7 @@ class SetupScreen extends StatefulWidget {
 
 class _SetupScreenState extends State<SetupScreen> {
   int _playerCount = 2;
+  MatchMode _matchMode = MatchMode.normal;
   bool _starting = false;
   final _nameControllers = List.generate(8, (_) => TextEditingController());
   final _packages = PackageSelection(
@@ -42,8 +44,11 @@ class _SetupScreenState extends State<SetupScreen> {
     });
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) =>
-            PackagesScreen(playerNames: names, selection: _packages),
+        builder: (_) => PackagesScreen(
+          playerNames: names,
+          matchMode: _matchMode,
+          selection: _packages,
+        ),
       ),
     );
     if (mounted) _starting = false;
@@ -70,16 +75,20 @@ class _SetupScreenState extends State<SetupScreen> {
                 ),
                 const SizedBox(height: 24),
                 for (final rule in [
-                  ('01', 'جاوب بصوت عالي', 'الباقي بيحكموا إذا إجابتك صح.'),
+                  (
+                    '01',
+                    'جاوب بصوت عالي',
+                    'السؤال يظل معك لحد ما المجموعة تقبل الإجابة.',
+                  ),
                   (
                     '02',
-                    'اضغط ومرّر الموبايل',
-                    'بعد الإجابة، الدور على اللي بعدك.',
+                    'جاوبت؟ مرّرها',
+                    'الجواب المقبول فقط يمرّر الدور ويغيّر السؤال.',
                   ),
                   (
                     '03',
-                    'انتبه للقنبلة!',
-                    'اللي تنفجر عنده بياخد خسارة. والأقل خسائر يفوز.',
+                    'تخطٍّ واحد وانتبه للقنبلة!',
+                    'التخطّي يبدّل السؤال ويبقي الدور عليك؛ والأقل خسائر يفوز.',
                   ),
                 ])
                   Padding(
@@ -285,6 +294,31 @@ class _SetupScreenState extends State<SetupScreen> {
                 style: TextStyle(fontSize: 13, color: GamePalette.muted),
               ),
             ),
+            const SizedBox(height: 24),
+            const Text(
+              'طول المباراة',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 8),
+            for (final mode in MatchMode.values)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: ChoiceChip(
+                  label: Text(
+                    '${switch (mode) {
+                      MatchMode.quick => 'سريعة',
+                      MatchMode.normal => 'عادية',
+                      MatchMode.open => 'مفتوحة',
+                    }} — ${switch (mode) {
+                      MatchMode.quick => 'جولة لكل لاعب',
+                      MatchMode.normal => 'جولتان لكل لاعب',
+                      MatchMode.open => 'أنهِ النتائج وقت ما تحبّوا',
+                    }}',
+                  ),
+                  selected: _matchMode == mode,
+                  onSelected: (_) => setState(() => _matchMode = mode),
+                ),
+              ),
           ],
         ),
       ),

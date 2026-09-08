@@ -45,7 +45,7 @@ class _BoomScreenState extends State<BoomScreen>
   }
 
   void _startNewRound() {
-    if (_actionStarted) return;
+    if (_actionStarted || !widget.gameState.canStartNextRound) return;
     setState(() => _actionStarted = true);
     widget.gameState.startNextRound();
     widget.gameState.phase = GamePhase.playing;
@@ -132,13 +132,17 @@ class _BoomScreenState extends State<BoomScreen>
             children: [
               GameButton(
                 label: 'جولة كمان',
-                onPressed: _actionStarted ? null : _startNewRound,
+                onPressed: _actionStarted || !widget.gameState.canStartNextRound
+                    ? null
+                    : _startNewRound,
                 icon: Icons.replay_rounded,
               ),
               const SizedBox(height: 10),
               GameButton(
                 label: 'النتائج',
-                onPressed: _actionStarted ? null : _showResults,
+                onPressed: _actionStarted || !widget.gameState.canShowResults
+                    ? null
+                    : _showResults,
                 icon: Icons.format_list_numbered_rounded,
                 secondary: true,
               ),

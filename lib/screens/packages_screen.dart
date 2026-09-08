@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:math';
 
 import '../data/question_packages.dart';
 import '../models/game_state.dart';
@@ -13,11 +14,13 @@ class PackagesScreen extends StatefulWidget {
   const PackagesScreen({
     super.key,
     required this.playerNames,
+    this.matchMode = MatchMode.normal,
     this.ads,
     this.selection,
   });
 
   final List<String> playerNames;
+  final MatchMode matchMode;
   final RewardedAdGateway? ads;
   final PackageSelection? selection;
 
@@ -51,12 +54,16 @@ class _PackagesScreenState extends State<PackagesScreen> {
   void _startGame() {
     if (_starting || !_selection.canStart || _selection.isBusy) return;
     setState(() => _starting = true);
+    final starter = Random().nextInt(widget.playerNames.length);
     Navigator.of(context).pushReplacement(
       MaterialPageRoute<void>(
         builder: (_) => GameScreen(
           gameState: GameState(
             playerNames: widget.playerNames,
+            currentPlayerIndex: starter,
+            initialStarterIndex: starter,
             phase: GamePhase.playing,
+            matchMode: widget.matchMode,
             questionPool: _selection.selectedQuestions,
             selectedPackageIds: _selection.selectedIds.toList(),
           ),

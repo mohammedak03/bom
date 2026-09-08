@@ -18,6 +18,9 @@ void main() {
         currentPlayerIndex: 1,
         currentRound: 3,
         answeredCount: 7,
+        matchMode: MatchMode.quick,
+        initialStarterIndex: 1,
+        skipUsed: [true, false],
         phase: GamePhase.playing,
         selectedPackageIds: ['countries'],
       );
@@ -28,6 +31,9 @@ void main() {
       expect(restored.playerNames, state.playerNames);
       expect(restored.lossPoints, state.lossPoints);
       expect(restored.currentRound, 3);
+      expect(restored.matchMode, MatchMode.quick);
+      expect(restored.initialStarterIndex, 1);
+      expect(restored.skipUsed, [true, false]);
       expect(restored.questionPool, isNotEmpty);
     },
   );

@@ -217,6 +217,41 @@ void main() {
     await unmount(tester);
   });
 
+  testWidgets(
+    'a skip changes question but keeps the player and timer running',
+    (tester) async {
+      var elapsed = Duration.zero;
+      final state = GameState(
+        playerNames: ['Ali', 'Sara'],
+        phase: GamePhase.playing,
+      );
+      await mountGame(tester, state: state, elapsedTime: () => elapsed);
+      final first = tester
+          .widget<QuestionCard>(find.byType(QuestionCard))
+          .question;
+      await tester.tap(find.byKey(const ValueKey('skip-question')));
+      await tester.pump();
+      expect(state.currentPlayerIndex, 0);
+      expect(state.answeredCount, 0);
+      expect(state.skipUsed, [true, false]);
+      expect(
+        identical(
+          tester.widget<QuestionCard>(find.byType(QuestionCard)).question,
+          first,
+        ),
+        isFalse,
+      );
+      elapsed = const Duration(seconds: 20);
+    final answer = tester.widget<GameButton>(
+      find.byKey(const ValueKey('answer-question')),
+    );
+    answer.onPressed!();
+      await finishNavigation(tester);
+      expect(state.lossPoints, [1, 0]);
+      await unmount(tester);
+    },
+  );
+
   testWidgets('next round action runs once and preserves match state', (
     tester,
   ) async {
@@ -228,6 +263,7 @@ void main() {
     final state = GameState(
       playerNames: ['Ali', 'Sara', 'Omar'],
       currentPlayerIndex: 2,
+      initialStarterIndex: 2,
       lossPoints: [0, 1, 2],
       currentRound: 4,
       answeredCount: 11,
