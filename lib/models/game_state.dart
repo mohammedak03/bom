@@ -41,9 +41,12 @@ class GameState {
 
     answeredCount++;
     currentPlayerIndex = (currentPlayerIndex + 1) % playerNames.length;
+  }
 
-    if (currentPlayerIndex == 0) {
-      currentRound++;
+  void startNextRound() {
+    currentRound++;
+    if (playerNames.isNotEmpty) {
+      currentPlayerIndex = (currentPlayerIndex + 1) % playerNames.length;
     }
   }
 

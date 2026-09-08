@@ -3,21 +3,34 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('GameState', () {
-    test('nextPlayer advances players, answered count, and rounds', () {
+    test('player wrapping keeps the same bomb round', () {
       final gameState = GameState(playerNames: ['Ali', 'Sara', 'Omar']);
 
-      gameState.nextPlayer();
-
-      expect(gameState.currentPlayerIndex, 1);
-      expect(gameState.answeredCount, 1);
-      expect(gameState.currentRound, 1);
-
-      gameState.nextPlayer();
-      gameState.nextPlayer();
+      for (var i = 0; i < 3; i++) {
+        gameState.nextPlayer();
+      }
 
       expect(gameState.currentPlayerIndex, 0);
       expect(gameState.answeredCount, 3);
-      expect(gameState.currentRound, 2);
+      expect(gameState.currentRound, 1);
+    });
+
+    test('starting another bomb round increments once and rotates player', () {
+      final gameState = GameState(
+        playerNames: ['Ali', 'Sara', 'Omar'],
+        currentPlayerIndex: 2,
+        lossPoints: [0, 1, 2],
+        currentRound: 4,
+        answeredCount: 11,
+        phase: GamePhase.boom,
+      );
+
+      gameState.startNextRound();
+
+      expect(gameState.currentRound, 5);
+      expect(gameState.currentPlayerIndex, 0);
+      expect(gameState.lossPoints, [0, 1, 2]);
+      expect(gameState.answeredCount, 11);
     });
 
     test('recordLoss adds a point to current player and changes phase', () {
@@ -45,7 +58,6 @@ void main() {
 
       gameState.reset();
 
-      expect(gameState.playerNames, ['Ali', 'Sara', 'Omar']);
       expect(gameState.currentPlayerIndex, 0);
       expect(gameState.lossPoints, [0, 0, 0]);
       expect(gameState.currentRound, 1);

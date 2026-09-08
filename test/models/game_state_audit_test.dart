@@ -111,11 +111,9 @@ void main() {
     });
   });
 
-  group('GameState audit: documented current round behavior', () {
-    // These assertions describe the existing implementation. They do not
-    // establish that a turn cycle is the intended definition of a bomb round.
+  group('GameState audit: bomb round behavior', () {
     for (final playerCount in [2, 8]) {
-      test('round rises only when an answer wraps $playerCount players', () {
+      test('round does not rise when an answer wraps $playerCount players', () {
         final state = GameState(
           playerNames: List.generate(playerCount, (index) => 'Player $index'),
           phase: GamePhase.playing,
@@ -128,7 +126,7 @@ void main() {
 
         state.nextPlayer();
 
-        expect(state.currentRound, 2);
+        expect(state.currentRound, 1);
         expect(state.currentPlayerIndex, 0);
         expect(state.answeredCount, playerCount);
       });

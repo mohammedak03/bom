@@ -20,6 +20,7 @@ class _BoomScreenState extends State<BoomScreen>
     with SingleTickerProviderStateMixin {
   late final AnimationController _entranceController;
   late final Animation<double> _entrance;
+  bool _actionStarted = false;
 
   @override
   void initState() {
@@ -40,12 +41,10 @@ class _BoomScreenState extends State<BoomScreen>
   }
 
   void _startNewRound() {
+    if (_actionStarted) return;
+    setState(() => _actionStarted = true);
+    widget.gameState.startNextRound();
     widget.gameState.phase = GamePhase.playing;
-    if (widget.gameState.playerNames.isNotEmpty) {
-      widget.gameState.currentPlayerIndex =
-          (widget.gameState.currentPlayerIndex + 1) %
-          widget.gameState.playerNames.length;
-    }
 
     Navigator.of(context).pushReplacement(
       MaterialPageRoute<void>(
@@ -55,6 +54,8 @@ class _BoomScreenState extends State<BoomScreen>
   }
 
   void _showResults() {
+    if (_actionStarted) return;
+    setState(() => _actionStarted = true);
     widget.gameState.phase = GamePhase.results;
     Navigator.of(context).pushReplacement(
       MaterialPageRoute<void>(
@@ -90,13 +91,13 @@ class _BoomScreenState extends State<BoomScreen>
           children: [
             GameButton(
               label: 'جولة كمان',
-              onPressed: _startNewRound,
+              onPressed: _actionStarted ? null : _startNewRound,
               icon: Icons.replay_rounded,
             ),
             const SizedBox(height: 10),
             GameButton(
               label: 'النتائج',
-              onPressed: _showResults,
+              onPressed: _actionStarted ? null : _showResults,
               icon: Icons.format_list_numbered_rounded,
               secondary: true,
             ),

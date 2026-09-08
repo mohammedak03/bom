@@ -15,9 +15,20 @@ import '../widgets/timer_bar.dart';
 import 'boom_screen.dart';
 
 class GameScreen extends StatefulWidget {
-  const GameScreen({super.key, required this.gameState});
+  const GameScreen({
+    super.key,
+    required this.gameState,
+    this.elapsedTime,
+    this.timerDuration,
+    this.enableAudio = true,
+  });
 
   final GameState gameState;
+
+  /// A monotonic clock seam used only by deterministic widget tests.
+  final Duration Function()? elapsedTime;
+  final Duration? timerDuration;
+  final bool enableAudio;
 
   @override
   State<GameScreen> createState() => _GameScreenState();
@@ -29,32 +40,39 @@ class _GameScreenState extends State<GameScreen> {
   final HapticService _hapticService = HapticService();
 
   Timer? _timer;
-  late DateTime _timerStartedAt;
+  late final Stopwatch _stopwatch;
   late Duration _timerDuration;
   late Question _currentQuestion;
 
   double _progress = 1;
-  bool _timerEnded = false;
+  bool _roundEnded = false;
+  bool _navigationStarted = false;
   bool _tickingSpedUp = false;
+  Duration? _lastAcceptedAnswerAt;
 
   @override
   void initState() {
     super.initState();
+    _stopwatch = Stopwatch()..start();
     _currentQuestion = _randomQuestion();
-    _audioService.startTicking();
+    if (widget.enableAudio) {
+      _audioService.startTicking();
+    }
     _startTimer();
   }
 
   @override
   void dispose() {
     _timer?.cancel();
-    unawaited(_audioService.stopTicking());
+    if (widget.enableAudio) {
+      unawaited(_audioService.stopTicking());
+    }
     super.dispose();
   }
 
   void _startTimer() {
-    _timerStartedAt = DateTime.now();
-    _timerDuration = Duration(seconds: 20 + _random.nextInt(41));
+    _timerDuration =
+        widget.timerDuration ?? Duration(seconds: 20 + _random.nextInt(41));
     _timer = Timer.periodic(
       const Duration(milliseconds: 100),
       (_) => _updateTimerProgress(),
@@ -62,30 +80,21 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   void _updateTimerProgress() {
-    final elapsed = DateTime.now().difference(_timerStartedAt);
+    final elapsed = _elapsed;
     final nextProgress =
         1 - (elapsed.inMilliseconds / _timerDuration.inMilliseconds);
 
     if (nextProgress <= 0) {
-      _timer?.cancel();
-      _timerEnded = true;
-      widget.gameState.recordLoss();
-      unawaited(_audioService.playExplosion());
-      unawaited(_hapticService.heavyExplosion());
-
-      if (mounted) {
-        setState(() {
-          _progress = 0;
-        });
-        _goToBoomScreen();
-      }
+      _endRound();
       return;
     }
 
     final clampedProgress = nextProgress.clamp(0.0, 1.0).toDouble();
     if (clampedProgress < 0.3 && !_tickingSpedUp) {
       _tickingSpedUp = true;
-      _audioService.speedUpTicking();
+      if (widget.enableAudio) {
+        _audioService.speedUpTicking();
+      }
     }
 
     if (mounted) {
@@ -96,6 +105,8 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   void _goToBoomScreen() {
+    if (_navigationStarted || !mounted) return;
+    _navigationStarted = true;
     Navigator.of(context).pushReplacement(
       MaterialPageRoute<void>(
         builder: (_) => BoomScreen(gameState: widget.gameState),
@@ -104,17 +115,47 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   void _answerQuestion() {
-    if (_timerEnded) {
+    final now = _elapsed;
+    // The deadline wins even if the periodic callback has not run yet.
+    if (now >= _timerDuration) {
+      _endRound();
+      return;
+    }
+    if (_roundEnded ||
+        (_lastAcceptedAnswerAt != null &&
+            now - _lastAcceptedAnswerAt! < const Duration(milliseconds: 400))) {
       return;
     }
 
-    unawaited(_audioService.playSuccess());
+    _lastAcceptedAnswerAt = now;
+
+    if (widget.enableAudio) {
+      unawaited(_audioService.playSuccess());
+    }
     unawaited(_hapticService.lightTap());
 
     setState(() {
       widget.gameState.nextPlayer();
       _currentQuestion = _randomQuestion(previousQuestion: _currentQuestion);
     });
+  }
+
+  Duration get _elapsed => widget.elapsedTime?.call() ?? _stopwatch.elapsed;
+
+  void _endRound() {
+    if (_roundEnded) return;
+    _roundEnded = true;
+    _timer?.cancel();
+    _stopwatch.stop();
+    widget.gameState.recordLoss();
+    if (widget.enableAudio) {
+      unawaited(_audioService.playExplosion());
+    }
+    unawaited(_hapticService.heavyExplosion());
+
+    if (!mounted) return;
+    setState(() => _progress = 0);
+    _goToBoomScreen();
   }
 
   Question _randomQuestion({Question? previousQuestion}) {
