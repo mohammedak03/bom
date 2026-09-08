@@ -5,17 +5,54 @@ import '../services/match_persistence.dart';
 import '../theme/game_theme.dart';
 import '../widgets/game_ui.dart';
 import 'setup_screen.dart';
+import 'game_screen.dart';
+import 'dart:math';
 
-class ResultsScreen extends StatelessWidget {
-  const ResultsScreen({super.key, required this.gameState});
+class ResultsScreen extends StatefulWidget {
+  const ResultsScreen({
+    super.key,
+    required this.gameState,
+    this.random,
+    this.nextStarter,
+  });
 
   final GameState gameState;
+  final Random? random;
+  final int Function(int max)? nextStarter;
+  @override
+  State<ResultsScreen> createState() => _ResultsScreenState();
+}
 
-  void _restart(BuildContext context) {
-    gameState.reset();
+class _ResultsScreenState extends State<ResultsScreen> {
+  bool _actionStarted = false;
+  GameState get gameState => widget.gameState;
+
+  void _newSettings(BuildContext context) {
+    if (_actionStarted) return;
+    _actionStarted = true;
     MatchPersistence().clear();
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute<void>(builder: (_) => const SetupScreen()),
+      (route) => false,
+    );
+  }
+
+  void _sameGroup(BuildContext context) {
+    if (_actionStarted) return;
+    setState(() => _actionStarted = true);
+    final fresh = GameState(
+      playerNames: gameState.playerNames,
+      questionPool: gameState.questionPool,
+      selectedPackageIds: gameState.selectedPackageIds,
+      matchMode: gameState.matchMode,
+      initialStarterIndex:
+          widget.nextStarter?.call(gameState.playerNames.length) ??
+          (widget.random ?? Random()).nextInt(gameState.playerNames.length),
+      phase: GamePhase.playing,
+    );
+    MatchPersistence().clear();
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute<void>(builder: (_) => GameScreen(gameState: fresh)),
       (route) => false,
     );
   }
@@ -34,10 +71,24 @@ class ResultsScreen extends StatelessWidget {
     return Directionality(
       textDirection: TextDirection.rtl,
       child: GamePage(
-        bottom: GameButton(
-          label: 'نلعب من جديد',
-          onPressed: () => _restart(context),
-          icon: Icons.replay_rounded,
+        bottom: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            GameButton(
+              key: const ValueKey('same-group-replay'),
+              label: 'نفس اللّمّة',
+              onPressed: () => _sameGroup(context),
+              icon: Icons.replay_rounded,
+            ),
+            const SizedBox(height: 10),
+            GameButton(
+              key: const ValueKey('new-settings'),
+              label: 'إعدادات جديدة',
+              onPressed: () => _newSettings(context),
+              icon: Icons.tune_rounded,
+              secondary: true,
+            ),
+          ],
         ),
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
@@ -93,6 +144,12 @@ class ResultsScreen extends StatelessWidget {
               const SizedBox(height: 32),
               Text(
                 '${_modeLabel(gameState.matchMode)} · ${gameState.totalRounds == null ? 'انتهت بعد الجولة ${gameState.currentRound}' : 'أُكملت ${gameState.currentRound} من ${gameState.totalRounds} جولات'}',
+                textAlign: TextAlign.center,
+                style: textTheme.bodySmall?.copyWith(color: GamePalette.muted),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'الإجابات المقبولة: ${gameState.answeredCount}',
                 textAlign: TextAlign.center,
                 style: textTheme.bodySmall?.copyWith(color: GamePalette.muted),
               ),

@@ -4,6 +4,7 @@ import 'package:bomb_questions/screens/game_screen.dart';
 import 'package:bomb_questions/screens/packages_screen.dart';
 import 'package:bomb_questions/screens/results_screen.dart';
 import 'package:bomb_questions/screens/setup_screen.dart';
+import 'package:bomb_questions/services/settings_service.dart';
 import 'package:bomb_questions/theme/game_theme.dart';
 import 'package:bomb_questions/widgets/timer_bar.dart';
 import 'package:flutter/material.dart';
@@ -74,7 +75,11 @@ void main() {
       final screens = <String, Widget>{
         'setup': const SetupScreen(),
         'packages': const PackagesScreen(playerNames: ['محمد', 'أحمد']),
-        'game': GameScreen(gameState: state),
+        'game': GameScreen(
+          gameState: state,
+          enableAudio: false,
+          timerDisplayModeOverride: TimerDisplayMode.visible,
+        ),
         'boom': BoomScreen(gameState: state),
         'results': ResultsScreen(gameState: state),
       };
@@ -99,6 +104,8 @@ void main() {
           reason: '${screen.key} at $size',
         );
         if (screen.key == 'game') {
+          await tester.tap(find.byKey(const ValueKey('start-round')));
+          await tester.pump(const Duration(seconds: 3));
           expect(find.byType(TimerBar).hitTestable(), findsOneWidget);
           expect(
             find.byKey(const ValueKey('answer-question')).hitTestable(),

@@ -7,6 +7,7 @@ import '../services/rewarded_ad_service.dart';
 import '../theme/game_theme.dart';
 import '../widgets/bomb_widget.dart';
 import '../widgets/game_ui.dart';
+import '../widgets/settings_sheet.dart';
 import 'packages_screen.dart';
 
 class SetupScreen extends StatefulWidget {
@@ -173,6 +174,11 @@ class _SetupScreenState extends State<SetupScreen> {
             Row(
               children: [
                 const Expanded(child: GameEyebrow(label: 'قنبلة الأسئلة')),
+                IconButton(
+                  onPressed: () => showGameSettingsSheet(context),
+                  tooltip: 'الإعدادات',
+                  icon: const Icon(Icons.settings_outlined, size: 23),
+                ),
                 IconButton(
                   onPressed: _showRules,
                   tooltip: 'كيف نلعب؟',
