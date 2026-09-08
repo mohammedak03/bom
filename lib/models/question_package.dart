@@ -8,12 +8,7 @@ class QuestionPackage {
     required this.description,
     required List<Question> questions,
     this.isFree = false,
-  }) : questions = List<Question>.unmodifiable([
-         for (var index = 0; index < questions.length; index++)
-           questions[index].copyWithDifficulty(
-             QuestionDifficulty.values[index ~/ 8],
-           ),
-       ]);
+  }) : questions = List<Question>.unmodifiable(questions);
 
   final String id;
   final String name;

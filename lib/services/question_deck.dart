@@ -66,12 +66,7 @@ class QuestionDeck {
     final unused = _pool.where((q) => !usedIds.contains(q.stableId)).toList();
     final topic = _nextTopic(unused);
     final inTopic = unused.where((q) => q.packageId == topic).toList();
-    final counts = difficultyCounts[playerIndex];
-    final least = counts.reduce((a, b) => a < b ? a : b);
-    final preferred = <int>[
-      for (var i = 0; i < 3; i++)
-        if (counts[i] == least) i,
-    ];
+    final preferred = _preferredDifficulties(inTopic, playerIndex);
     final eligible = inTopic
         .where((q) => preferred.contains(q.difficulty.index))
         .toList();
@@ -89,6 +84,29 @@ class QuestionDeck {
     lastQuestionId = selected.stableId;
     difficultyCounts[playerIndex][selected.difficulty.index]++;
     return selected;
+  }
+
+  /// The catalog deliberately contains 12 easy, 8 medium, and 4 hard prompts
+  /// per topic. Each player follows that ratio; this keeps difficulty exposure
+  /// comparable without forcing equal easy, medium, and hard counts.
+  List<int> _preferredDifficulties(List<Question> candidates, int player) {
+    const weights = [12, 8, 4];
+    final available = candidates.map((q) => q.difficulty.index).toSet();
+    var bestRatio = double.infinity;
+    for (final difficulty in available) {
+      final ratio = difficultyCounts[player][difficulty] / weights[difficulty];
+      if (ratio < bestRatio) bestRatio = ratio;
+    }
+    final ratioPreferred = available
+        .where(
+          (difficulty) =>
+              (difficultyCounts[player][difficulty] / weights[difficulty] -
+                      bestRatio)
+                  .abs() <
+              0.000001,
+        )
+        .toList();
+    return ratioPreferred;
   }
 
   String _nextTopic(List<Question> unused) {

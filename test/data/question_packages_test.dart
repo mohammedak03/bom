@@ -24,22 +24,64 @@ void main() {
       );
     });
 
-    test('every topic has a usable bank belonging only to that topic', () {
-      for (final package in questionPackages) {
-        expect(package.name.trim(), isNotEmpty, reason: package.id);
-        expect(package.description.trim(), isNotEmpty, reason: package.id);
-        expect(
-          package.questions.length,
-          greaterThanOrEqualTo(20),
-          reason: package.id,
-        );
-        for (final question in package.questions) {
-          expect(question.text.trim(), isNotEmpty, reason: package.id);
-          expect(question.packageId, package.id, reason: question.text);
-          expect(question.category, package.name, reason: question.text);
+    test(
+      'every topic has exactly 24 reviewed questions with valid metadata',
+      () {
+        final ids = <String>{};
+        final texts = <String>{};
+        for (final package in questionPackages) {
+          expect(package.name.trim(), isNotEmpty, reason: package.id);
+          expect(package.description.trim(), isNotEmpty, reason: package.id);
+          expect(package.questions.length, 24, reason: package.id);
+          for (final question in package.questions) {
+            expect(question.text.trim(), isNotEmpty, reason: package.id);
+            expect(question.id.trim(), isNotEmpty, reason: question.text);
+            expect(ids.add(question.id), isTrue, reason: question.id);
+            expect(
+              question.referenceAnswer.trim(),
+              isNotEmpty,
+              reason: question.id,
+            );
+            expect(
+              question.referenceAnswer.trim(),
+              isNot(question.text.trim()),
+              reason: question.id,
+            );
+            expect(question.packageId, package.id, reason: question.text);
+            expect(question.category, package.name, reason: question.text);
+            final alternatives = <String>{};
+            for (final alternative in question.acceptedAlternatives) {
+              final normalized = alternative.trim().toLowerCase();
+              expect(normalized, isNotEmpty, reason: question.id);
+              expect(alternatives.add(normalized), isTrue, reason: question.id);
+            }
+            final normalizedText = question.text
+                .trim()
+                .toLowerCase()
+                .replaceAll(RegExp(r'\s+'), ' ');
+            expect(texts.add(normalizedText), isTrue, reason: question.id);
+          }
+          expect(
+            package.questions.where((q) => q.difficulty.name == 'easy').length,
+            12,
+            reason: package.id,
+          );
+          expect(
+            package.questions
+                .where((q) => q.difficulty.name == 'medium')
+                .length,
+            8,
+            reason: package.id,
+          );
+          expect(
+            package.questions.where((q) => q.difficulty.name == 'hard').length,
+            4,
+            reason: package.id,
+          );
         }
-      }
-    });
+        expect(ids, hasLength(144));
+      },
+    );
 
     test('questions are unique within each topic and across the catalog', () {
       final allTexts = <String>{};

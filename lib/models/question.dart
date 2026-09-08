@@ -4,10 +4,10 @@ class Question {
   const Question({
     required this.text,
     required this.category,
-    this.packageId = '',
-    this.id = '',
-    this.referenceAnswer = 'الإجابة المرجعية تُراجع مع المجموعة.',
-    this.difficulty = QuestionDifficulty.medium,
+    required this.packageId,
+    required this.id,
+    required this.referenceAnswer,
+    required this.difficulty,
     this.acceptedAlternatives = const [],
   });
 
